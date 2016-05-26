@@ -261,7 +261,7 @@
 		To git@github.com:schacon/simplegit.git 
 		- [deleted] serverfix 
 		有种方便记忆这条命令的方法:记住我们不久前见过的 git push [远程名] [本地分支]:[远程分支] 语法,如果省略 [本地分支],那就等于是在说“在这里 提取空白然后把它变成[远程分支]”。 
-	储藏(Stashing) 
+	2.14 储藏(Stashing) 
 		现在你想切换分支,但是你还不想提交你正在进行中的工作;所以你储藏这些变更。为了 往堆栈推送一个新的储藏,只要运行 git stash:  
 		$ git stash
 		Saved working directory and index state \ 
