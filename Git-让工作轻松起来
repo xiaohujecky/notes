@@ -1,0 +1,296 @@
+以下Notes来自《git pro》
+
+1.配置
+  1.1 基本配置
+  $ git config --global user.name "John Doe"
+  $ git config --global user.email johndoe@example.com 
+  /etc/gitconfig文件:系统中对所有用户都普遍适用的配置。若使用 git config 时 用 --system 选项,读写的就是这个文件。 
+  ~/.gitconfig文件:用户目录下的配置文件只适用于该用户。若使用 git config 时 用 --global 选项,读写的就是这个文件。 
+  当前项目的 git 目录中的配置文件(也就是工作目录中的 .git/config 文件):这 里的配置仅仅针对当前项目有效。每一个级别的配置都会覆盖上层的相同配置,所以 .git/config 里的配置会覆盖 /etc/gitconfig 中的同名变量。 
+
+  还有一个比较常用的是,在解决合并冲突时使用哪种差异分析工具。比如要改用 vimdiff 的话: 
+  $ git config --global merge.tool vimdiff 
+  Git 可以理解 kdiff3,tkdiff,meld,xxdiff,emerge,vimdiff,gvimdiff,ecmerge, 和 opendiff 等合并工具的输出信息。 
+
+  修改编辑器：一般可能会是 Vi 或者 Vim 
+  git config --global core.editor emacs 
+
+  查看配置：$ git config --list 
+
+	1.2 Git 命令别名 
+	可以用 git config 为命令设置别名 
+	$ git config --global alias.co checkout 
+	$ git config --global alias.br branch
+	$ git config --global alias.ci commit
+	$ git config --global alias.st status 
+	$  git config --global alias.last 'log -1 HEAD' 要看最后一次的提交信息,就变得简单多了: git last
+	
+	$ git config --global alias.unstage 'reset HEAD --' 则 以下两个等效：
+	$ git unstage fileA
+	$ git reset HEAD fileA 
+	
+2.使用
+	初始化git仓库：$git init 
+	$ git add *.c
+	$ git add README
+	$ git commit -m 'initial project version' 
+
+  2.1 克隆：
+	git clone git://github.com/schacon/grit.git  .
+	用新名字来命名项目：
+	git clone git://github.com/schacon/grit.git mygrit 
+	
+	2.2 忽略：
+	$ cat .gitignore *.[oa]
+	*~ 
+	第一行告诉 Git 忽略所有以 .o 或 .a 结尾的文件。一般这类对象文件和存档文件都是 编译过程中出现的,我们用不着跟踪它们的版本。第二行告诉 Git 忽略所有以波浪符(~) 结尾的文件,许多文本编辑软件(比如 Emacs)都用这样的文件名保存副本。此外,你可能 还需要忽略 log,tmp 或者 pid 目录,以及自动生成的文档等等。要养成一开始就设置好 .gitignore 文件的习惯,以免将来误提交这类无用的文件。 
+	文件 .gitignore 的格式规范如下:
+	• 所有空行或者以注释符号 # 开头的行都会被 Git 忽略。
+	• 可以使用标准的 glob 模式匹配。
+	• 匹配模式最后跟反斜杠(/)说明要忽略的是目录。
+	• 要忽略指定模式以外的文件或目录,可以在模式前加上惊叹号(!)取反。 
+	所谓的 glob 模式是指 shell 所使用的简化了的正则表达式。星号(*)匹配零个或多个任 意字符;[abc] 匹配任何一个列在方括号中的字符(这个例子要么匹配一个 a,要么匹配一 个 b,要么匹配一个 c);问号(?)只匹配一个任意字符;如果在方括号中使用短划线分 隔两个字符,表示所有在这两个字符范围内的都可以匹配(比如 [0-9] 表示匹配所有 0 到 9 的数字)。 
+	我们再看一个 .gitignore 文件的例子: 
+	# 此为注释 – 将被 Git 忽略
+	*.a # 忽略所有 .a 结尾的文件
+	!lib.a # 但 lib.a 除外
+	/TODO # 仅仅忽略项目根目录下的 TODO 文件,不包括 subdir/TODO build/ # 忽略 build/ 目录下的所有文件
+	doc/*.txt # 会忽略 doc/notes.txt 但不包括 doc/server/arch.txt 
+	
+	
+	2.3 改动：
+	若要看已经暂存起来的文件和上次提交时的快照之间的差异,可以用 git diff --cached 命令。 
+	单单 git diff 不过是显示还没有暂存起来的改动,而不是这次工作和上次提交 之间的差异。所以有时候你一下子暂存了所有更新过的文件后,运行 git diff 后却什么也 没有,就是这个原因。 
+	
+	在提交的时候,给 git commit 加上 -a 选项,Git 就会自动把所有已经跟踪过的文件暂存起来一并提交,从而跳过 git add 
+	$ git commit -a -m 'made a change' 
+	
+	2.4 移除文件
+	要从 Git 中移除某个文件,就必须要从已跟踪文件清单中移除(确切地说,是从暂存区 域移除),然后提交。可以用 git rm 命令完成此项工作,并连带从工作目录中删除指定的 文件,这样以后就不会出现在未跟踪文件清单中了。 
+	如果只是简单地从工作目录中手工删除文件,运行 git status 时就会在 “Changed but not updated” 部分(也就是_未暂存_清单)看到:  
+	$rm grit.gemspec 
+	$git status
+	#On branch master 
+	#Changed but not updated:
+	#(use "git add/rm <file>..." to update what will be committed) 
+	#deleted: grit.gemspec 
+	然后再运行 git rm 记录此次移除文件的操作: 
+	$ git rm grit.gemspec
+	＃rm 'grit.gemspec' 
+	$git status
+	＃On branch master 
+	＃Changes to be committed:
+	＃(use "git reset HEAD <file>..." to unstage) 
+	＃deleted: grit.gemspec 
+	最后提交的时候,该文件就不再纳入版本管理了。如果删除之前修改过并且已经放到暂存 区域的话,则必须要用强制删除选项 -f(译注:即 force 的首字母),以防误删除文件后 丢失修改的内容。 
+	另外一种情况是（保留文件）,我们想把文件从 Git 仓库中删除(亦即从暂存区域移除),但仍然希望保留在当前工作目录中。换句话说,仅是从跟踪清单中删除。比如一些大型日志文件或者 一堆 .a 编译文件,不小心纳入仓库后,要移除跟踪但不删除文件,以便稍后在 .gitignore 文件中补上,用 --cached 选项即可:  
+	$ git rm --cached readme.txt 
+	后面可以列出文件或者目录的名字,也可以使用 glob 模式。比方说: 
+	$ git rm log/\*.log 
+	此命令删除所有 log/ 目录下扩展名为 .log 的文件。注意到星号 * 之前的反斜杠 \,因为 Git 有它自己的文件模式扩展匹配方式,所以我们 不用 shell 来帮忙展开(译注:实际上不加反斜杠也可以运行,只不过按照 shell 扩展的 话,仅仅删除指定目录下的文件而不会递归匹配。上面的例子本来就指定了目录,所以效果 等同,但下面的例子就会用递归方式匹配,所以必须加反斜杠。)。类似的比如: 
+	$ git rm \*~ 
+	会递归删除当前目录及其子目录中所有 ~ 结尾的文件 
+	
+	2.5 移动文件
+	要在 Git 中对文件改名,可以 这么做: 
+	git mv README.txt README
+	git status
+	On branch master
+	Your branch is ahead of 'origin/master' by 1 commit. 
+	Changes to be committed:
+	(use "git reset HEAD <file>..." to unstage) 
+	renamed: README.txt -> README 
+	其实,运行 git mv 就相当于运行了下面三条命令: 
+	$ mv README.txt README 
+	$ git rm README.txt
+	$ git add README 
+	
+	2.6 查看提交历史
+	git log -p -2
+	--stat,仅显示简要的增改行数统计; --pretty 选项,可以指定使用完全不同于默认格式的方式展示提交历 史。比如用 oneline 将每个提交放在一行显示,这在提交数很大时非常有用。另外还有 short,full 和 fuller 可以用,展示的信息或多或少有些不同 
+	git log --pretty=oneline
+	$ git log --pretty=format:"%h %s" --graph
+	$ git log --pretty='%an %cn'
+	
+	2.7 提交
+	想要撤消刚才 的提交操作,可以使用 --amend 选项重新提交,如果刚才提交时忘了暂存某些修改,可以先补上暂存操作,然后再运行 --amend 提交: 
+	$ git commit -m 'initial commit' 
+	$ git add forgotten_file
+	$ git commit --amend 
+	上面的三条命令最终得到一个提交,第二个提交命令修正了第一个的提交内容。
+	
+	取消已经暂存的文件 
+	就在 “Changes to be committed” 下面,括号中有提示,可以使用 git reset HEAD <file>... 的方式取消暂存 
+	$ git reset HEAD benchmarks.rb 
+	
+	取消对文件的修改 
+	git status
+	On branch master
+	Changes to be committed: 
+	(use "git reset HEAD <file>..." to unstage) modified: README.txt 
+	Changed but not updated:
+	(use "git add <file>..." to update what will be committed)
+	(use "git checkout -- <file>..." to discard changes in working directory) 
+	modified: benchmarks.rb 
+	
+	$ git checkout -- benchmarks.rb 
+	这条命令有些危险, 所有对文件的修改都没有了,因为我们刚刚把之前版本的文件复制过来重写了此文件。所以 在用这条命令前,请务必确定真的不再需要保留刚才的修改。如果只是想回退版本,同时保 留刚才的修改以便将来继续工作,可以用下章介绍的 stashing 和分支来处理,应该会更好些。
+	
+	2.8 查看当前的远程库：
+	git remote -v
+	
+	要添加一个新的远程仓库,可以指定一个简单的名字,以便将来引用,运行 git remote add [shortname] [url]: 
+	$ git remote
+	origin
+	$ git remote add pb git://github.com/paulboone/ticgit.git 
+	$ git remote -v 
+	origin git://github.com/schacon/ticgit.git 
+	pb git://github.com/paulboone/ticgit.git 
+	现在可以用字串 pb 指代对应的仓库地址了。比如说,要抓取所有 Paul 有的,但本地仓 库没有的信息,可以运行 git fetch pb: 
+	$ git fetch pb
+	remote: Counting objects: 58, done.
+	remote: Compressing objects: 100% (41/41), done. remote: Total 44 (delta 24), reused 1 (delta 0) Unpacking objects: 100% (44/44), done.
+	From git://github.com/paulboone/ticgit 
+	* [new branch] master -> pb/master * [new branch] ticgit -> pb/ticgit 
+	可以用下面的命令从远程仓库抓取数据到本地:
+	$ git fetch [remote-name] 
+	如果设置了某个分支用于跟踪某个远端仓库的分支,可以使用git pull 命令自动抓取数据下来,然后将远端分支自动合并到本地仓库中当前分支。 
+将本地仓库中的数据推送到远程仓库。实现这个任务的命令很简单: git push [remote-name] [branch-name]
+	$git push origin master
+	可以通过命令 git remote show [remote-name] 查看某个远程仓库的详细信息,比如要看所克隆的 origin 仓库,可以运行: 
+	$ git remote show origin 
+	* remote origin 
+	URL: git://github.com/schacon/ticgit.git
+	Remote branch merged with 'git pull' while on branch master 
+	master
+	Tracked remote branches 
+	master ticgit 
+	
+	2.9 远程操作：
+	新版 Git 中可以用 git remote rename 命令修改某个远程仓库的简短名称,比如想把 
+	pb 改成 paul,可以这么运行: 
+	注意,对远程仓库的重命名,也会使对应的分支名称发生变化,原来的 pb/master 分支 现在成了 paul/master。 
+	碰到远端仓库服务器迁移,或者原来的克隆镜像不再使用,又或者某个参与者不再贡献代 码,那么需要移除对应的远端仓库,可以运行 git remote rm 命令: 
+	$ git remote rm paul 
+	$ git remote
+	origin 
+	
+	2.10 打标签
+	$ git tag -a v1.4 -m 'my version 1.4' 
+	$ git tag
+	v0.1
+	v1.3 
+	v1.4 
+	显示标签的版本信息 ：
+	$ git show v1.4
+	默认情况下,git push 并不会把标签传送到远端服务器上,只有通过显式命令才能分享 
+	标签到远端仓库。其命令格式如同推送分支,运行 git push origin [tagname] 即可: 
+	$ git push origin v1.5
+	如果要一次推送所有(本地新增的)标签上去,可以使用 --tags 选项: 
+	$ git push origin --tags
+
+	2.11 Git 分支 
+	新建一个 testing 分支,可以使用 git branch 命令: 
+	$ git branch testing 
+	$ git checkout testing 
+	
+	新建并切到该分支：
+	$ git checkout -b iss53
+	Switched to a new branch "iss53" 
+	相当于一下两条命令
+	$ git branch iss53
+	$ git checkout iss53 
+	用 git merge 命令来进行合并: 
+		$ git checkout master 
+		Switched to branch "master" 
+		新建分支，修补问题：
+		$ git checkout -b 'hotfix'
+		Switched to a new branch "hotfix"
+		$ vim index.html
+		$ git commit -a -m 'fixed the broken email address' 
+		[hotfix]: created 3a0874c: "fixed the broken email address" 
+		1 files changed, 0 insertions(+), 1 deletions(-) 
+		问题修复，合并到master：
+		$ git checkout master 
+		$ git merge hotfix 
+		合并时出现了 “Fast forward”(快进)提示。由于当前 master 分支所在的 commit 是要并入的 hotfix 分支的直接上游,Git只需把指针直接后移。这个过程叫做快进(Fast forward) 。因为现在 hotfix 分支和 master 指向相同的提交,现在没什么用了,可以先删掉它。使用 git branch 的 -d 选 项表示删除:
+		$ git branch -d hotfix
+		Deleted branch hotfix (3a0874c). 
+		
+		
+	2.12 分支管理 
+		Git branch
+		若要查看各个分支最后一次 commit 信息,运行 git branch -v:  
+		$ git branch -v
+		iss53 93b412c fix javascript issue 
+		* master 7a98805 Merge branch 'iss53'
+		testing 782fd34 add scott to the author list in the readmes 
+		要从该清单中筛选出你已经(或尚未)与当前分支合并的分支,可以用 --merge 和 -- no-merged 选项(Git 1.5.6 以上版本)。比如 git branch -merge 查看哪些分支已被并 入当前分支: 
+		$ git branch --merged 
+		    iss53 
+		* master 
+		之前我们已经合并了 iss53,所以在这里会看到它。一般来说,列表中没有 * 的分支通 常都可以用 git branch -d 来删掉。原因很简单,既然已经把它们所包含的工作整合到了 其他分支,删掉也不会损失什么。 
+		另外可以用 git branch --no-merged 查看尚未合并的工作: 
+		$ git branch --no-merged 
+		   testing 
+		我们会看到其余还未合并的分支。因为其中还包含未合并的工作,用 git branch -d 删 除该分支会导致失败: 
+		$ git branch -d testing
+		error: The branch 'testing' is not an ancestor of your current HEAD. 
+		不过,如果你坚信你要删除它,可以用大写的删除选项 -D 强制执行,例如 git branch -D testing。 
+		
+	2.13 推送
+		如果你有个叫 serverfix 的分支需要和他人一起开发,可以运行 git push (远程仓库 
+		名) (分支名): 
+		$ git push origin serverfix
+		 可以运行 git push origin serverfix:serferfix达到相同的效果;可以把本地分支推送到某个命名不同的远程分支:若想把远程分支叫作 awesomebranch,可以用 git push origin serverfix:awesomebranch 来推送数据。 
+		接下来,当你的协作者再次从服务器上获取数据时,他们将得到一个新的远程分支 origin/serverfix: 
+		$ git fetch origin
+		* [new branch] serverfix -> origin/serverfix 
+		值得注意的是, 在 fetch 操作抓来新的远程分支之后,你仍然无法在本地编辑该远程仓 库。换句话说,在本例中,你不会有一个新的 serverfix 分支,有的只是一个你无法移动 的 origin/serverfix 指针。
+		如果要把该内容合并到当前分支,可以运行 git merge origin/serverfix。如果想要一 份自己的 serverfix 来开发,可以在远程分支的基础上分化出一个新的分支来: 
+		$ git checkout -b serverfix origin/serverfix
+		这会切换到新建的 serverfix 本地分支,其内容同远程分支 origin/serverfix 一致, 你可以在里面继续开发了。 
+		跟踪分支 
+		从远程分支检出的本地分支,称为跟踪分支(tracking branch)。 跟踪分支是一种和远程 分支有直接联系的本地分支。在跟踪分支里输入 git push,Git 会自行推断应该向哪个服 务器的哪个分支推送数据。反过来,在这些分支里运行 git pull 会获取所有远程索引,并 把它们的数据都合并到本地分支中来。 
+		在克隆仓库时,Git 通常会自动创建一个 master 分支来跟踪 origin/master。这正是 git push 和 git pull 一开始就能正常工作的原因。当然,你可以随心所欲地设定为其它 跟踪分支,比如 origin 上除了 master 之外的其它分支。刚才我们已经看到了这样的一个 例子:git checkout -b [分支名] [远程名]/[分支名]。如果你有 1.6.2 以上版本的 Git, 还可以用 --track 选项简化: 
+		$ git checkout --track origin/serverfix
+		要为本地分支设定不同于远程分支的名字,只需在前个版本的命令里换个名字:
+		$ git checkout -b sf origin/serverfix
+		想在服务器上删除 serverfix 分支,运行下面的命令: 
+		$ git push origin :serverfix
+		To git@github.com:schacon/simplegit.git 
+		- [deleted] serverfix 
+		有种方便记忆这条命令的方法:记住我们不久前见过的 git push [远程名] [本地分支]:[远程分支] 语法,如果省略 [本地分支],那就等于是在说“在这里 提取空白然后把它变成[远程分支]”。 
+	储藏(Stashing) 
+		现在你想切换分支,但是你还不想提交你正在进行中的工作;所以你储藏这些变更。为了 往堆栈推送一个新的储藏,只要运行 git stash:  
+		$ git stash
+		Saved working directory and index state \ 
+		"WIP on master: 049d078 added the index file" HEAD is now at 049d078 added the index file
+		(To restore them type "git stash apply") 
+		你的工作目录就干净了: 
+		$ git status
+		# On branch master
+		nothing to commit (working directory clean) 
+		$ git stash list
+		stash@{0}: WIP on master: 049d078 added the index file 
+		stash@{1}: WIP on master: c264051... Revert "added file_size" 
+		stash@{2}: WIP on master: 21d80a5... added number to log 
+		你可以 重新应用你刚刚实施的储藏,所采用的命令就是之前在原始的 stash 命令的帮助输出里提 示的:git stash apply。如果你想应用更早的储藏,你可以通过名字指定它,像这样:git stash apply stash@2 
+		apply 选项只尝试应用储藏的工作——储藏的内容仍然在栈上。要移除它,你可以运行 git stash drop,加上你希望移除的储藏的名字: 
+		$ git stash list
+		stash@{0}: WIP on master: 049d078 added the index file stash@{1}: WIP on master: c264051... Revert "added file_size" stash@{2}: WIP on master: 21d80a5... added number to log
+		$ git stash drop stash@{0}
+		Dropped stash@{0} (364e91f3f268f0900bc3ee613f9f733e82aaed43) 
+		你也可以运行 git stash pop 来重新应用储藏,同时立刻将其从堆栈中移走。 
+		你可以运行 git stash branch,这会创建一个新的分支,检出你储藏工作时的所处的提交,重新应用你的工作,如果成功,将会丢弃储藏。
+		$ git stash branch testchanges Switched to a new branch "testchanges" 
+		#
+		#
+		Dropped refs/stash@{0} (f0dfc4d5dc332d1cee34a634182e168c4efc3359) 
+		这是一个很棒的捷径来恢复储藏的工作然后在新的分支上继续当时的工作。
+	
+	2.15 标签Tags 
+		Tag 有两种类型:annotated 和 lightweight 。你可以类 似下面这样的命令建立一个 lightweight tag:
+		$ git update-ref refs/tags/v1.0 cac0cab538b970a37ea1e  
+		你可以这样创建一个 annotated tag(-a 参数表明这是一个 annotated tag): 
+		$ git tag -a v1.1 1a410efbd13591db07496601ebc7a059dd55cfe9 –m 'test tag' 
